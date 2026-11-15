@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>noiruxx audit agent — BSC NFT checks, straight from the chain</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#0b0f14;color:#e6edf3;margin:0;line-height:1.6}
+main{max-width:760px;margin:0 auto;padding:40px 20px 64px}
+h1{font-size:28px;line-height:1.25;margin:0 0 8px}
+h2{font-size:18px;margin:32px 0 8px;color:#7ee787}
+p,li{color:#c9d1d9}
+a{color:#58a6ff}
+code{background:#161b22;padding:2px 6px;border-radius:6px;font-size:13px;color:#e6edf3}
+pre{background:#161b22;padding:14px;border-radius:8px;overflow-x:auto;font-size:13px}
+pre code{background:none;padding:0}
+.demo{border:1px solid #30363d;border-radius:8px;padding:16px;margin:12px 0}
+.demo b{color:#e6edf3}
+.warn{border-left:3px solid #d29922;padding:8px 14px;background:#161b22}
+</style>
+</head>
+<body>
+<main>
+<h1>noiruxx audit agent</h1>
+<p><b>A preliminary screen for BSC NFT contracts — read from the chain, not from a dashboard.</b></p>
+<p>Free-mint hunters lose money to contracts that look free and turn out to be drainable, upgradeable, or uncapped. This agent answers one question before anyone mints: <i>what does the contract itself actually say?</i> It reads the contract on BNB Smart Chain, checks source verification on Sourcify, and scores the facts against a public rubric. No API key, no signup, no wallet connect.</p>
+
+<h2>Live endpoints</h2>
+<div class="demo">
+<b>GET /api/audit?contract=0x…&amp;tokenId=123</b><br>
+Preliminary audit screen: name, symbol, supply, max supply, owner, proxy status, Sourcify verification, per-check score out of 100, and a pass/fail verdict at the 75 bar.
+</div>
+<div class="demo">
+<b>GET /api/owner?contract=0x…&amp;tokenId=123</b><br>
+On-chain owner of one BSC ERC-721 token (<code>ownerOf</code>).
+</div>
+
+<h2>Try it live</h2>
+<ul>
+<li><a href="/api/audit?contract=0xd088e5aa3c9b15d129846488e9ae5712ce7bf6b6&tokenId=2380">Pocket Moons #2380</a> — free mint claimed by the agent's operator</li>
+<li><a href="/api/audit?contract=0x5e6ec40E540cf9231fedE1E27144fEE252CbE205&tokenId=3655">Binanceminer BinerCard #3655</a> — mining card, Rare tier</li>
+<li><a href="/api/audit?contract=0xF2a6D1A5Da92d611cf8eC614548D4d6E83BEB6D8&tokenId=1632">HATCHIEggy #1632</a> — unverified source, see what the screen says</li>
+<li><a href="/api/owner?contract=0xd088e5aa3c9b15d129846488e9ae5712ce7bf6b6&tokenId=2380">ownerOf Pocket Moons #2380</a></li>
+</ul>
+
+<h2>How it works</h2>
+<ol>
+<li><b>Read the chain.</b> <code>eth_call</code> against public BSC RPCs: <code>name()</code>, <code>symbol()</code>, <code>totalSupply()</code>, <code>maxSupply()</code>, <code>owner()</code>, <code>ownerOf(tokenId)</code>. <code>eth_getCode</code> and the EIP-1967 implementation slot tell whether the contract is a proxy.</li>
+<li><b>Check verification.</b> Sourcify's check-by-addresses API reports exact match, partial match, or no verified source.</li>
+<li><b>Score transparently.</b> 25 points for verified source, 15 each for ERC-721 interface, bounded supply, no upgradeable proxy, no live owner, and token existence. Unverified source + upgradeable proxy caps the score at 40, the same hard cap the operator's rubric uses. Verdict: pass at 75/100 or higher.</li>
+</ol>
+
+<h2>What it can and cannot do</h2>
+<p class="warn"><b>It cannot prove a contract is safe.</b> It reads public on-chain facts. It cannot see off-chain promises, mint or transfer rules hidden in unverified bytecode, or drain functions. A passing screen is a green light to look closer, not a guarantee — and a failing screen is a reason to stop. The response says this in every reply.</p>
+
+<h2>Why this exists</h2>
+<p>The operator hunts free mints on BSC through an AI agent (noiruxx.ai) and scores every candidate against the same rubric this endpoint implements. The agent's daily work — verifying contracts before any mint, refusing to guess at decimals or ownership, stopping on unverified data — is exactly what this API packages for anyone else to call.</p>
+
+<h2>Links</h2>
+<ul>
+<li>Source: <a href="https://github.com/meongs123/noiruxx-audit-agent">github.com/meongs123/noiruxx-audit-agent</a></li>
+<li>Agent Games Wildcard entry by @noiruxx — Season 01, zkVerify</li>
+</ul>
+</main>
+</body>
+</html>
